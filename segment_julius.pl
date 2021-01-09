@@ -47,9 +47,9 @@ $debug_flag=0;
 
 ## julius executable
 if ($^O =~ /MSWin/){
-    $juliusbin=".\\bin\\julius-4.3.1.exe";
+    $juliusbin=".\\bin\\julius-4.6.exe";
 } else {
-    $juliusbin="./bin/julius-4.3.1";
+    $juliusbin="./bin/julius-4.6";
 }
 
 ## acoustic model
@@ -133,7 +133,7 @@ foreach $f (@files) {
     }
 
     #### execute Julius and store the output to log
-    $command = "echo $f.wav | $juliusbin -h $hmmdefs -dfa $f.dfa -v $f.dict";
+    $command = "echo $f.wav | $juliusbin -h $hmmdefs -dfa $f.dfa -v $f.dict -nolog";
     $command .= " -palign";
     if ($hlist ne "") {
 	$command .= " -hlist $hlist";

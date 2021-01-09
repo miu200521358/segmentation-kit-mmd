@@ -1,0 +1,246 @@
+(segment) C:\MMD\segmentation-kit-mmd>bin\julius-4.6.exe --help
+Julius rev.4.6 - based on JuliusLib rev.4.6 (fast)
+
+Engine specification:
+ -  Base setup   : fast
+ -  Supported LM : DFA, N-gram, Word
+ -  Extension    : NoPThread NoMBR
+ -  Compiled by  : msvc
+
+Options:
+
+--- Global Options -----------------------------------------------
+
+ Feature Vector Input:
+    [-input devname]       input source  (default = htkparam)
+         htkparam/mfcfile  feature vectors in HTK parameter file format
+         outprob           outprob vectors in HTK parameter file format
+         vecnet            receive vectors from client (TCP/IP)
+    [-filelist file]    filename of input file list
+
+ Speech Input:
+    (Can extract MFCC/FBANK/MELSPEC features from waveform)
+    [-input devname]    input source  (default = htkparam)
+         file/rawfile      waveform file (RAW(BE),WAV)
+         mic               default microphone device
+         adinnet           adinnet client (TCP/IP)
+         stdin             standard input
+    [-filelist file]    filename of input file list
+    [-adport portnum]   adinnet port number to listen         (5530)
+    [-48]               enable 48kHz sampling with internal down sampler (OFF)
+    [-zmean/-nozmean]   enable/disable DC offset removal      (OFF)
+    [-lvscale]          input level scaling factor (1.0: OFF) (1.0)
+    [-nostrip]          disable stripping off zero samples
+    [-record dir]       record triggered speech data to dir
+    [-rejectshort msec] reject an input shorter than specified
+    [-rejectlong msec]  reject an input longer than specified
+
+ Speech Detection: (default: on=mic/net off=files)
+    [-cutsilence]       turn on (force) skipping long silence
+    [-nocutsilence]     turn off (force) skipping long silence
+    [-lv unsignedshort] input level threshold (0-32767)       (2000)
+    [-zc zerocrossnum]  zerocross num threshold per sec.      (60)
+    [-headmargin msec]  header margin length in msec.         (300)
+    [-tailmargin msec]  tail margin length in msec.           (400)
+    [-chunksize sample] unit length for processing            (1000)
+    [-fvad]             FVAD sw (-1=off, 0-3=on / degree      (-1)
+    [-fvad_param i f]   FVAD parameter (dur/thres)            (5 0.50)
+
+ GMM utterance verification:
+    -gmm filename       GMM definition file
+    -gmmnum num         GMM Gaussian pruning num              (10)
+    -gmmreject string   comma-separated list of noise model name to reject
+
+ On-the-fly Decoding: (default: on=mic/net off=files)
+    [-realtime]         turn on, input streamed with MAP-CMN
+    [-norealtime]       turn off, input buffered with sentence CMN
+
+ Others:
+    [-C jconffile]      load options from jconf file
+    [-quiet]            reduce output to only word string
+    [-demo]             equal to "-quiet -progout"
+    [-debug]            (for debug) dump numerous log
+    [-callbackdebug]    (for debug) output message per callback
+    [-check (wchmm|trellis)] (for debug) check internal structure
+    [-check triphone]   triphone mapping check
+    [-outprobout file]  Output state probabilities to file
+    [-setting]          print engine configuration and exit
+    [-help]             print this message and exit
+
+--- Instance Declarations ----------------------------------------
+
+    [-AM]               start a new acoustic model instance
+    [-LM]               start a new language model instance
+    [-SR]               start a new recognizer (search) instance
+    [-AM_GMM]           start an AM feature instance for GMM
+    [-GLOBAL]           start a global section
+    [-nosectioncheck]   disable option location check
+
+--- Acoustic Model Options (-AM) ---------------------------------
+
+ Acoustic analysis:
+    [-htkconf file]     load parameters from the HTK Config file
+    [-smpFreq freq]     sample period (Hz)                    (16000)
+    [-smpPeriod period] sample period (100ns)                 (625)
+    [-fsize sample]     window size (sample)                  (400)
+    [-fshift sample]    frame shift (sample)                  (160)
+    [-preemph]          pre-emphasis coef.                    (0.97)
+    [-fbank]            number of filterbank channels         (24)
+    [-ceplif]           cepstral liftering coef.              (22)
+    [-rawe] [-norawe]   toggle using raw energy               (no)
+    [-enormal] [-noenormal] toggle normalizing log energy     (no)
+    [-escale]           scaling log energy for enormal        (1.0)
+    [-silfloor]         energy silence floor in dB            (50.0)
+    [-delwin frame]     delta windows length (frame)          (2)
+    [-accwin frame]     accel windows length (frame)          (2)
+    [-hifreq freq]      freq. of upper band limit, off if <0  (-1)
+    [-lofreq freq]      freq. of lower band limit, off if <0  (-1)
+    [-sscalc]           do spectral subtraction (file input only)
+    [-sscalclen msec]   length of head silence for SS (msec)  (300)
+    [-ssload filename]  load constant noise spectrum from file for SS
+    [-ssalpha value]    alpha coef. for SS                    (2.000000)
+    [-ssfloor value]    spectral floor for SS                 (0.500000)
+    [-zmeanframe/-nozmeanframe] frame-wise DC removal like HTK(OFF)
+    [-usepower/-nousepower] use power in fbank analysis       (OFF)
+    [-cmnload file]     load initial CMN/CVN param from file on startup
+    [-cmnsave file]     save CMN/CVN param to file after each input
+    [-cmnstatic]        no MAP, use static CMN/CVN (use with -cmnload)
+    [-cvnstatic]        use static CVN only (use with -cmnload)
+    [-cmnnoupdate]      not update initial param while recog. (use with -cmnload)
+    [-cmnmapweight]     weight value of initial cm for MAP-CMN (100.00)
+    [-cvn]              cepstral variance normalisation       (on)
+    [-vtln alpha lowcut hicut] enable VTLN (1.0 to disable)   (1.000000)
+
+ Acoustic Model:
+    -h hmmdefsfile      HMM definition file name
+    [-hlist HMMlistfile] HMMlist filename (must for triphone model)
+    [-dnnconf file]     DNN configuration file
+    [-iwcd1 methodname] switch IWCD triphone handling on 1st pass
+             best N     use N best score (default of n-gram, N=3)
+             max        use maximum score
+             avg        use average score (default of dfa)
+    [-force_ccd]        force to handle IWCD
+    [-no_ccd]           don't handle IWCD
+    [-notypecheck]      don't check input parameter type
+    [-spmodel HMMname]  name of short pause model             ("sp")
+    [-multipath]        switch decoding for multi-path HMM    (auto)
+
+ Acoustic Model Computation Method:
+    [-gprune methodname] select Gaussian pruning method:
+             safe          safe pruning
+             heuristic     heuristic pruning
+             beam          beam pruning (default for TM/PTM)
+             none          no pruning (default for non tmix models)
+    [-tmix gaussnum]    Gaussian num threshold per mixture for pruning (2)
+    [-gshmm hmmdefs]    monophone hmmdefs for GS
+    [-gsnum N]          N-best state will be selected        (24)
+
+--- Language Model Options (-LM) ---------------------------------
+
+ N-gram:
+    -d file.bingram     n-gram file in Julius binary format
+    -nlr file.arpa      forward n-gram file in ARPA format
+    -nrl file.arpa      backward n-gram file in ARPA format
+    [-lmp float float]  weight and penalty (tri: 8.0 -2.0 mono: 5.0 -1)
+    [-lmp2 float float]       for 2nd pass (tri: 8.0 -2.0 mono: 6.0 0)
+    [-transp float]     penalty for transparent word (+0.0)
+
+ DFA Grammar:
+    -dfa file.dfa       DFA grammar file
+    -gram file[,file2...] (list of) grammar prefix(es)
+    -gramlist filename  filename of grammar list
+    [-penalty1 float]   word insertion penalty (1st pass)     (0.0)
+    [-penalty2 float]   word insertion penalty (2nd pass)     (0.0)
+
+ Word Dictionary for N-gram and DFA:
+    -v dictfile         dictionary file name
+    [-silhead wordname] (n-gram) beginning-of-sentence word   (<s>)
+    [-siltail wordname] (n-gram) end-of-sentence word         (</s>)
+    [-mapunk wordname]  (n-gram) map unknown words to this    (<unk>)
+    [-forcedict]        ignore error entry and keep running
+    [-iwspword]         (n-gram) add short-pause word for inter-word CD sp
+    [-iwspentry entry]  (n-gram) word entry for "-iwspword" (<UNK> [sp] sp sp)
+    [-adddict dictfile] (n-gram) load extra dictionary
+    [-addentry entry]   (n-gram) load extra word entry
+
+ Isolated Word Recognition:
+    -w file[,file2...]  (list of) wordlist file name(s)
+    -wlist filename     file that contains list of wordlists
+    -wsil head tail sp  name of silence/pause model
+                          head - BOS silence model name       (silB)
+                          tail - EOS silence model name       (silE)
+                           sp  - their name as context or "NULL" (NULL)
+
+--- Recognizer / Search Options (-SR) ----------------------------
+
+ Search Parameters for the First Pass:
+    [-b beamwidth]      beam width (by state num)             (guessed)
+                        (0: full search, -1: force guess)
+    [-bs score_width]   beam width (by score offset)          (disabled)
+                        (-1: disable)
+    [-sepnum wordnum]   (n-gram) # of hi-freq word isolated from tree (150)
+    [-1pass]            do 1st pass only, omit 2nd pass
+    [-inactive]         recognition process not active on startup
+
+ Search Parameters for the Second Pass:
+    [-b2 hyponum]       word envelope beam width (by hypo num) (30)
+    [-n N]              # of sentence to find                 (1)
+    [-output N]         # of sentence to output               (1)
+    [-sb score]         score beam threshold (by score)       (80.0)
+    [-s hyponum]        global stack size of hypotheses       (500)
+    [-m hyponum]        hypotheses overflow threshold num     (2000)
+    [-lookuprange N]    frame lookup range in word expansion  (5)
+    [-looktrellis]      (dfa) expand only backtrellis words
+    [-[no]multigramout] (dfa) output per-grammar results
+    [-oldtree]          (dfa) use old build_wchmm()
+    [-oldiwcd]          (dfa) use full lcdset
+    [-iwsp]             insert sp for all word end (multipath)(off)
+    [-iwsppenalty]      trans. penalty for iwsp (multipath)   (-1.0)
+
+ Short-pause Segmentation:
+    [-spsegment]        enable short-pause segmentation
+    [-spdur]            length threshold of sp frames         (10)
+    [-pausemodels str]  comma-delimited list of pause models for segment
+
+ Graph Output with graph-oriented search:
+    [-lattice]          enable word graph (lattice) output
+    [-confnet]          enable confusion network output
+    [-nolattice]][-noconfnet] disable lattice / confnet output
+    [-graphrange N]     merge same words in graph (0)
+                        -1: not merge, leave same loc. with diff. score
+                         0: merge same words at same location
+                        >0: merge same words around the margin
+    [-graphcut num]     graph cut depth at postprocess (-1: disable)(80)
+    [-graphboundloop num] max. num of boundary adjustment loop (20)
+    [-graphsearchdelay] inhibit search termination until 1st sent. found
+    [-nographsearchdelay] disable it (default)
+
+ Forced Alignment:
+    [-walign]           optionally output word alignments
+    [-palign]           optionally output phoneme alignments
+    [-salign]           optionally output state alignments
+
+ Confidence Score:
+    [-cmalpha value]    CM smoothing factor                    (0.050000)
+
+ Message Output:
+    [-fallback1pass]    use 1st pass result when search failed
+    [-progout]          progressive output in 1st pass
+    [-proginterval]     interval of progout in msec           (300)
+
+-------------------------------------------------
+
+ Additional options for application:
+    [--help]    display this help
+    [-help]     display this help
+    [-outfile]  save result in separate .out file
+    [-nolog]    not output any log
+    [-logfile arg]      output log to file
+    [-noxmlescape]      disable XML escape
+    [-separatescore]    output AM and LM scores separately
+    [-kanji arg]        convert character set for output
+    [-nocharconv]       disable charconv
+    [-charconv arg arg] convert character set for output
+    [-outcode arg]      select info to output to the module: WLPSCwlps
+    [-module (arg)]     run as a server module
+    [-record arg]       record input waveform to file in dir
