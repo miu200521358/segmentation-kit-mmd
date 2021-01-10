@@ -133,7 +133,7 @@ foreach $f (@files) {
     }
 
     #### execute Julius and store the output to log
-    $command = "echo $f.wav | $juliusbin -h $hmmdefs -dfa $f.dfa -v $f.dict -nolog";
+    $command = "echo $f.wav | $juliusbin -h $hmmdefs -dfa $f.dfa -v $f.dict";
     $command .= " -palign";
     if ($hlist ne "") {
 	$command .= " -hlist $hlist";

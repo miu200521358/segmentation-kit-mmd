@@ -16,15 +16,14 @@ import datetime
 import shutil
 
 from spleeter.separator import Separator
-from spleeter.audio.adapter import get_audio_adapter
+from spleeter.audio.adapter import get_default_audio_adapter
 from mmd.utils.MLogger import MLogger
-from mmd.monaural_adapter import FFMPEGMonauralProcessAudioAdapter
 
 logger = MLogger(__name__)
 
 def execute(args):
     try:
-        logger.info('音声認識処理開始: {0}', args.audio_file, decoration=MLogger.DECORATION_BOX)
+        logger.info('音声分離処理開始: {0}', args.audio_file, decoration=MLogger.DECORATION_BOX)
 
         if not os.path.exists(args.audio_file):
             logger.error("指定された音声ファイルパスが存在しません。\n{0}", args.audio_file, decoration=MLogger.DECORATION_BOX)
@@ -45,9 +44,8 @@ def execute(args):
         # フォルダ生成
         os.makedirs(process_audio_dir)
 
-        audio_adapter = FFMPEGMonauralProcessAudioAdapter()
-        sample_rate = 44100
-        waveform, _ = audio_adapter.load(args.audio_file, sample_rate=sample_rate)
+        audio_adapter = get_default_audio_adapter()
+        waveform, sample_rate = audio_adapter.load(args.audio_file)
 
         # 音声と曲に分離
         separator = Separator('spleeter:2stems')
@@ -63,11 +61,11 @@ def execute(args):
         # 一旦wavとして保存
         audio_adapter.save(vocals_wav_path, vocals, sample_rate, "wav")
 
-        logger.info('音声認識処理終了: {0}', process_audio_dir, decoration=MLogger.DECORATION_BOX)
+        logger.info('音声分離処理終了: {0}', process_audio_dir, decoration=MLogger.DECORATION_BOX)
 
         return True, process_audio_dir
     except Exception as e:
-        logger.critical("音声認識で予期せぬエラーが発生しました。", e, decoration=MLogger.DECORATION_BOX)
+        logger.critical("音声分離で予期せぬエラーが発生しました。", e, decoration=MLogger.DECORATION_BOX)
         return False, None
  
 

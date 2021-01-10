@@ -9,5 +9,7 @@ pip install numpy-quaternion bezier
 conda install -c anaconda ffmpeg 
 conda install -c anaconda perl
 
+pip install noisereduce
+
 # いらないかも
 pip install scipy
