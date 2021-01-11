@@ -26,6 +26,9 @@ class FFMPEGMonauralProcessAudioAdapter(FFMPEGProcessAudioAdapter):
             raise SpleeterError(f'output directory does not exists: {directory}')
         get_logger().debug('Writing file %s', path)
         input_kwargs = {'ar': sample_rate, 'ac': data.shape[-1]}
+        # # モノラル、16kHz、ちょっと音程下げる、音量を上げる
+        # output_kwargs = {'ar': 16000, 'ac': 1, 'af': f'asetrate={sample_rate}*80/100,atempo=100/80,volume=1.5'}
+        # モノラル、16kHz、ちょっと音程下げる、音量を上げる
         output_kwargs = {'ar': 16000, 'ac': 1}
         if bitrate:
             output_kwargs['audio_bitrate'] = bitrate

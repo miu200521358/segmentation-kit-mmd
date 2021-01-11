@@ -54,30 +54,44 @@ def execute(args):
             # 連続した改行は分割文字列に置換
             lyric = ""
             for v in f.readlines():
-                if re.fullmatch(r'^(\d?\d)\:(\d\d)-(\d?\d)\:(\d\d)$', v.strip()):
-                    m = re.match(r'^(\d?\d)\:(\d\d)-(\d?\d)\:(\d\d)$', v.strip())
+                if re.fullmatch(r'^(\d?\d)\:(\d\d).(\d\d)-(\d?\d)\:(\d\d).(\d\d)$', v.strip()):
+                    m = re.match(r'^(\d?\d)\:(\d\d).(\d\d)-(\d?\d)\:(\d\d).(\d\d)$', v.strip())
 
                     # 開始秒数
-                    separate_start_sec = int(float(m.group(1))) * 60 + int(float(m.group(2)))
+                    separate_start_sec = float(m.group(1)) * 60 + float(m.group(2)) + float(m.group(3)) * 0.01
                     # 終了秒数
-                    separate_end_sec = int(float(m.group(3))) * 60 + int(float(m.group(4)))
+                    separate_end_sec = float(m.group(4)) * 60 + float(m.group(5)) + float(m.group(6)) * 0.01
                     # 追加
-                    separates.append((separate_start_sec, separate_end_sec))
+                    separates.append((separate_start_sec, separate_end_sec, v.strip()))
                 else:
                     if len(v.strip()) == 0:
                         # 改行のみの場合、追加
                         full_lyrics_txts.append(lyric)
                         lyric = ""
+                    elif re.match(r'\d', v.strip()) is not None and lyric == "":
+                        logger.warning("秒数区切りの書式が間違っています。\n入力文字列: {0}\n{1}", v.strip(), args.lyrics_file, decoration=MLogger.DECORATION_BOX)
                     else:
                         # 普通の文字列は結合だけしておく
-                        lyric += ' sp '
-                        lyric += re.sub(r'( |　)', ' sp ', re.sub(r'(\n|、|。|！|\!|？|\?)', "", v))
+                        lyric += re.sub(r'\n', '', re.sub(r'(！|\!|？|\?| |　|、|。)+', "", v))
             
             full_lyrics_txts.append(lyric)
 
         if len(separates) != len(full_lyrics_txts):
             logger.error("歌詞と秒数区切りのペアが正しく設定されていません。\n{0}", args.lyrics_file, decoration=MLogger.DECORATION_BOX)
             return False
+        
+        prev_separate_start_sec = 0
+        for sidx, (separate_start_sec, separate_end_sec, separate_txt) in enumerate(separates):
+            if separate_start_sec > separate_end_sec:
+                logger.error("{0}番目のブロックが、終了秒に開始秒より前の値が設定されています。\n終了秒数: {1}, 開始秒数: {2}({3}), \n{4}", \
+                             sidx, separate_end_sec, separate_start_sec, separate_txt, args.lyrics_file, decoration=MLogger.DECORATION_BOX)
+                return False
+
+            if sidx > 0 and separate_start_sec < prev_separate_start_sec:
+                logger.error("{0}番目のブロックが、ひとつ前のブロックの開始秒より前の値が設定されています。\n前回の開始秒数: {1}, 今回の開始秒数: {2}({3}), \n{4}", \
+                             sidx, prev_separate_start_sec, separate_start_sec, separate_txt, args.lyrics_file, decoration=MLogger.DECORATION_BOX)
+                return False
+            prev_separate_start_sec = separate_start_sec
 
         # 全角カタカナはひらがなに変換
         full_lyric = "".join(full_lyrics_txts)
@@ -87,7 +101,7 @@ def execute(args):
         not_hira_list = re.findall(r'[^ぁ-んー\-{10}( sp )]', full_lyric)
         if len(not_hira_list) > 0:
             # ひらがな以外はエラー
-            logger.error("指定された歌詞ファイルにひらがな以外が含まれています。\n{0}\nエラー文字：{1}", args.lyrics_file, ",".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
+            logger.error("指定された歌詞ファイルに全角カナ・ひらがな以外が含まれています。\n{0}\nエラー文字：{1}", args.lyrics_file, ",".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
             return False
 
         # wavを読み込み
@@ -117,12 +131,14 @@ def execute(args):
         # WAV形式で 16kHz, 16bit, PCM（無圧縮）形式
         rate = 16000
 
-        for tidx, ((separate_start_sec, separate_end_sec), lyrics) in enumerate(tqdm(zip(separates, full_lyrics_txts))):
-            logger.debug("[{0}] lyrics: {1}", tidx, lyrics)
+        is_failure = False
+
+        for tidx, ((separate_start_sec, separate_end_sec, separate_txt), lyrics) in enumerate(zip(separates, full_lyrics_txts)):
             tidx_dir_name = f"{tidx:03}"
 
-            # ひらがな変換
-            lyric = katakana2hiragana(lyrics)
+            hira_lyric = katakana2hiragana(lyrics)
+
+            logger.info("【No.{0}】入力歌詞:\n{1}", tidx, lyrics)
 
             # ディレクトリ作成
             os.makedirs(os.path.join(args.audio_dir, tidx_dir_name), exist_ok=True)
@@ -130,15 +146,16 @@ def execute(args):
             start_fno = int(separate_start_sec * 30)
             fno = start_fno
 
-            if separate_end_sec - separate_start_sec > 120:
-                # 100秒以上はスルー
-                logger.warning("【No.{0}】120秒以上の区間は一度に出力できないため、処理をスキップします。分割してください。", f'{tidx:03}', decoration=MLogger.DECORATION_BOX)
+            if len(hira_lyric) > 300:
+                # 300文字以上はスルー（spを想定して少し幅を持たせてある）
+                logger.warning("【No.{0}】250文字以上の区間は一度に出力できないため、処理をスキップします。分割してください。\n{1}", f'{tidx:03}', hira_lyric, decoration=MLogger.DECORATION_BOX)
+                is_failure = True
                 continue
             
             block_audio_file = os.path.join(args.audio_dir, tidx_dir_name, 'block.wav')
 
             # wavファイルの一部を分割保存
-            audio_adapter.save(block_audio_file, data[round(separate_start_sec*org_rate):round(separate_end_sec*org_rate)], rate, "wav")
+            audio_adapter.save(block_audio_file, data[round(separate_start_sec*org_rate):(round(separate_end_sec*org_rate)-1)], rate, "wav")
 
             # 分割データを再読み込み
             sep_data, rate = audio_adapter.load(block_audio_file, sample_rate=16000)
@@ -148,21 +165,31 @@ def execute(args):
 
             # 分割した歌詞を出力
             with open(os.path.join(args.audio_dir, tidx_dir_name, 'block.txt'), "w", encoding='utf-8') as f:
-                f.write(lyric)
+                f.write(hira_lyric)
 
             logger.info("【No.{0}】音素分解開始", f'{tidx:03}', decoration=MLogger.DECORATION_LINE)
 
             # Perl スクリプトで音素分解
             popen = subprocess.Popen(["perl", "segment_julius.pl" , os.path.join(args.audio_dir, tidx_dir_name)], stdout=subprocess.PIPE)
-            # 終了まで待つ
-            popen.wait()
+            try:
+                # 終了まで待つ(30秒でタイムアウト)
+                popen.wait(timeout=30)
+            except subprocess.TimeoutExpired as e:
+                try:
+                    popen.kill()
+                except Exception:
+                    pass
+                is_failure = True
+                logger.warning("【No.{0}】音素分解に失敗しました。", f'{tidx:03}', ", ".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
+                continue
 
             logger.info("【No.{0}】リップモーフ生成開始", f'{tidx:03}', decoration=MLogger.DECORATION_LINE)
 
             lab_file = os.path.join(args.audio_dir, tidx_dir_name, f'block.lab')
 
             if not os.path.exists(lab_file) or os.path.getsize(lab_file) == 0:
-                logger.error("音節取得に失敗しました。\n{0}", lab_file, ", ".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
+                logger.warning("【No.{0}】音節取得に失敗しました。\n{1}", f'{tidx:03}', lab_file, ", ".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
+                is_failure = True
                 continue
 
             lab_txts = []
@@ -170,111 +197,133 @@ def execute(args):
                 # 音素解析結果をそのまま読み込む
                 lab_txts = [v.split() for v in f.readlines()]
             
-            prev_start_fno = 0
-            now_end_fno = 0
-            prev_start_rate = 0
-            prev_morph_name = ""
+            prev_start_s = 0
             prev_syllable = ""
+            prev_morph_name = ""
+            now_morph_name = ""
+            VOWELS = ["a", "i", "u", "e", "o", "a:", "i:", "u:", "e:", "o:"]
+            ENDS = ["N"]
 
-            for lidx, (start_s_txt, end_s_txt, syllable) in enumerate(tqdm(lab_txts, desc=f"No.{tidx:03} Lip ...")):
-                start_s = float(start_s_txt)
-                end_s = float(end_s_txt)
+            for lidx, (start_s_txt, end_s_txt, syllable) in enumerate(lab_txts):
+                start_s =  min(len(lab_txts), max(0, float(start_s_txt) - 0.05))
+                end_s = min(len(lab_txts), max(0, float(end_s_txt) + 0.05))
 
                 # キーフレは開始と終了の間
-                now_start_fno = start_fno + round(start_s * 30)
+                now_start_fno = start_fno + round(prev_start_s * 30)
                 now_end_fno = start_fno + round(end_s * 30)
 
-                now_start_rate = round(start_s * rate)
-                now_end_rate = round(end_s * rate)
-
-                if lidx == 0:
-                    prev_start_fno = now_start_fno
-                    prev_start_rate = now_start_rate
-                    continue
-                
-                # 現在の範囲の音量
-                now_values = sep_data[prev_start_rate:now_end_rate]
-                now_times = time[prev_start_rate:now_end_rate]
-
-                # 最大値を口の大きさとする
-                now_max_idx = np.argmax(now_values)
-                now_max_ratio = max(0, min(1, abs(now_values[now_max_idx])))
-                now_max_fno = start_fno + round(now_times[now_max_idx] * 30)
-
-                prev_start_fno -= 3
-
-                if prev_start_fno == now_start_fno:
-                    prev_start_fno -= 2
-
-                if now_max_fno == now_start_fno or now_max_fno == prev_start_fno:
-                    now_max_fno += 2
-
+                now_ratios = []
                 for vowel, morph_name in [("a", "あ"), ("i", "い"), ("u", "う"), ("e", "え"), ("o", "お")]:
                     if syllable.startswith(vowel):
-                        # 初期化はひとつ前の音節
-                        vowel_init_fno = max(0, prev_start_fno)
-                        vimf = VmdMorphFrame(max(0, vowel_init_fno))
-                        vimf.set_name(morph_name)
-                        vimf.ratio = 0
-                        motion.regist_mf(vimf, vimf.name, vimf.fno)
+                        now_morph_name = morph_name
 
-                        # 母音の開始
-                        vsmf = VmdMorphFrame(max(0, now_start_fno))
-                        vsmf.set_name(morph_name)
-                        vsmf.ratio = abs(sep_data[now_start_rate])
+                if syllable in ENDS:
+                    # んの場合、閉じる
+                    vsmf = VmdMorphFrame(max(0, now_start_fno))
+                    vsmf.set_name(now_morph_name)
+                    vsmf.ratio = 0
+                    motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
+
+                    vemf = VmdMorphFrame(max(0, now_end_fno))
+                    vemf.set_name(now_morph_name)
+                    vemf.ratio = 0
+                    motion.regist_mf(vemf, vemf.name, vemf.fno)
+                    
+                    now_morph_name = "ん"                    
+                elif syllable in VOWELS:
+                    now_start_s = start_s if prev_syllable in VOWELS or prev_syllable in ENDS else prev_start_s
+                    now_vs = []
+
+                    if args.threshold < 1:
+                        # 前が母音もしくは終端の場合、現在から始める。子音の場合は前から繋げる
+                        s =  now_start_s
+                        while s < end_s:
+                            # 音量範囲のINDEX
+                            rs = round(s * rate)
+                            rf = min(len(sep_data), round((s + 1 / 30) * rate) - 1)
+
+                            vs = sep_data[rs:rf]
+                            f = round(s * 30) + start_fno
+
+                            if len(vs) > 0:
+                                # 母音の変動
+                                vsmf = VmdMorphFrame(max(0, f))
+                                vsmf.set_name(now_morph_name)
+                                # 端っこは小さめにする
+                                vsmf.ratio = min(1, float(np.max(vs)) * min(((min(2, ((s - now_start_s) * 30)) / 2), ((min(2, (end_s - s) * 30)) / 2))))
+                                motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
+                                now_ratios.append(str(round(vsmf.ratio, 3)))
+
+                            s += 1 / 30
+                    elif args.threshold == 1:
+                        # 1の場合、最高値を登録する
+                        rs = round(now_start_s * rate)
+                        rf = round(end_s * rate)
+
+                        vs = sep_data[rs:rf]
+                        fs = round(min(end_s - 1, (now_start_s + 2)) * 30) + start_fno
+                        fe = round(max(start_s + 1, (end_s - 2)) * 30) + start_fno
+
+                        if len(vs) > 0:
+                            # 台形になるように、開始と終了に同じ値
+                            vsmf = VmdMorphFrame(max(0, fs))
+                            vsmf.set_name(now_morph_name)
+                            vsmf.ratio = min(1, float(np.max(vs)))
+                            motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
+                            now_ratios.append(str(round(vsmf.ratio, 3)))
+
+                            vemf = VmdMorphFrame(max(0, fe))
+                            vemf.set_name(now_morph_name)
+                            vemf.ratio = min(1, float(np.max(vs)))
+                            motion.regist_mf(vemf, vemf.name, vemf.fno)
+                            now_ratios.append(str(round(vemf.ratio, 3)))
+
+                    if prev_morph_name != now_morph_name:
+                        # 母音の開始(上書き)
+                        # 母音が同じ場合、連続させるので入らない
+                        vsmf = VmdMorphFrame(now_start_fno)
+                        vsmf.set_name(now_morph_name)
+                        vsmf.ratio = 0
                         motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
 
-                        # 母音の最大値
-                        vmmf = VmdMorphFrame(max(0, now_max_fno))
-                        vmmf.set_name(morph_name)
-                        vmmf.ratio = now_max_ratio
-                        motion.regist_mf(vmmf, vmmf.name, vmmf.fno)
+                    # 母音の終了
+                    # 前の母音が残っていたら終了
+                    for m in ["あ", "い", "う", "え", "お"]:
+                        mf = motion.calc_mf(m, now_end_fno)
+                        if mf.ratio != 0:
+                            mf.ratio = 0
+                            motion.regist_mf(mf, mf.name, mf.fno)
 
-                        # 母音の終了
-                        vemf = VmdMorphFrame(max(0, now_end_fno))
-                        vemf.set_name(morph_name)
-                        vemf.ratio = abs(sep_data[now_end_rate])
-                        motion.regist_mf(vemf, vemf.name, vemf.fno)
+                if syllable in VOWELS or syllable in ENDS:
+                    # exoデータを出力
+                    now_exo_chara_txt = str(exo_chara_txt)
+                    now_chara = prev_syllable + syllable if prev_syllable not in VOWELS else syllable
+                    # ひらがな変換
+                    now_kana = romaji2hiragana(now_chara)
+                    # 長音追加
+                    now_kana = now_kana.replace(":", "ー")
+                    # ユニコードエスケープ
+                    now_uni_chara =to_unicode_escape(now_kana)
+                    layer = int(fidx % 3) + 1
+                    logger.test(f"fno: {fno}, index: {fidx}, start_fno: {now_start_fno}, layer: {layer}, text: {romaji2hiragana(now_chara)}, uni: {now_uni_chara}")
+                    for format_txt, value in [("<<index>>", fidx), ("<<start_fno>>", now_start_fno), ("<<end_fno>>", now_end_fno), ("<<layer>>", layer), \
+                                                ("<<encoded_txt>>", now_uni_chara.ljust(4096, '0'))]:
+                        now_exo_chara_txt = now_exo_chara_txt.replace(format_txt, str(value))
+                    lyric_exo_f.write(now_exo_chara_txt)
+                    fidx += 1
 
-                        # 母音の完了
-                        vowel_finish_fno = max(0, now_end_fno + 5)
-                        vfmf = VmdMorphFrame(max(0, vowel_finish_fno))
-                        vfmf.set_name(morph_name)
-                        vfmf.ratio = 0
-                        motion.regist_mf(vfmf, vfmf.name, vfmf.fno)
+                    logger.info(f"[{tidx}-{lidx}][{now_kana}:{now_morph_name}] start: {now_start_fno}({round(start_s,4)}), range: {','.join(now_ratios)} end: {now_end_fno}({round(end_s,4)})")
 
-                        # exoデータを出力
-                        now_chara = syllable
-                        if lidx > 1 or (lidx == 1 and syllable in ["a", "i", "u", "e", "o"]):
-                            now_exo_chara_txt = str(exo_chara_txt)
-                            now_chara = prev_syllable + syllable if prev_syllable not in ["a", "i", "u", "e", "o", "sp"] else syllable
-                            now_uni_chara =to_unicode_escape(romaji2hiragana(now_chara))
-                            layer = int(fidx % 3) + 1
-                            logger.test(f"fno: {fno}, index: {fidx}, start_fno: {now_start_fno}, layer: {layer}, text: {romaji2hiragana(now_chara)}, uni: {now_uni_chara}")
-                            for format_txt, value in [("<<index>>", fidx), ("<<start_fno>>", now_start_fno), ("<<end_fno>>", now_end_fno), ("<<layer>>", layer), \
-                                                      ("<<encoded_txt>>", now_uni_chara.ljust(4096, '0'))]:
-                                now_exo_chara_txt = now_exo_chara_txt.replace(format_txt, str(value))
-                            lyric_exo_f.write(now_exo_chara_txt)
-                            fidx += 1
-
-                        logger.debug(f"[{morph_name}:{romaji2hiragana(now_chara)}] init: {vowel_init_fno}, start: {now_start_fno}({vsmf.ratio}), max: {now_max_fno}({vmmf.ratio}), end: {now_end_fno}({vemf.ratio}), finish: {vowel_finish_fno}")
-
-                        prev_morph_name = morph_name
-                        break
-
+                prev_start_s = start_s
                 prev_syllable = syllable
-                prev_start_fno = now_start_fno
-                prev_start_rate = now_start_rate
-
-            # 最後を閉じる
-            vowel_finish_fno = max(0, now_end_fno + 3)
-            vfmf = VmdMorphFrame(max(0, vowel_finish_fno))
-            vfmf.set_name(prev_morph_name)
-            vfmf.ratio = 0
-            motion.regist_mf(vfmf, vfmf.name, vfmf.fno)
-            logger.debug(f"[{prev_morph_name}] finish: {vowel_finish_fno}")
+                prev_morph_name = now_morph_name
 
             logger.info("【No.{0}】リップモーフ生成終了", f'{tidx:03}', decoration=MLogger.DECORATION_LINE)
+
+        if 0 < args.threshold < 1:
+            logger.info("不要モーフキー削除処理", decoration=MLogger.DECORATION_LINE)
+            for morph_name in tqdm(['あ', 'い', 'う', 'え', 'お']):
+                motion.remove_unnecessary_mf(-1, morph_name, threshold=args.threshold)
 
         logger.info("モーション生成開始", decoration=MLogger.DECORATION_LINE)
 
@@ -290,6 +339,9 @@ def execute(args):
 
         lyric_exo_f.close()
         logger.info("exoファイル生成終了: {0}", exo_file_path, decoration=MLogger.DECORATION_BOX)
+
+        if is_failure:
+            logger.warning("モーフ生成に失敗してる区間があります。ログを確認してください。", decoration=MLogger.DECORATION_BOX)
 
         return True
     except Exception as e:
@@ -329,7 +381,7 @@ def _make_kana_convertor():
         
         'ァ':'ぁ', 'ィ':'ぃ', 'ゥ':'ぅ', 'ェ':'ぇ', 'ォ':'ぉ',
         'ャ':'ゃ', 'ュ':'ゅ', 'ョ':'ょ',
-        'ヴ':'う', 'ッ':'っ', 'ヰ':'い', 'ヱ':'え',
+        'ヴ':'う', 'ッ':'っ', 'ー': 'ー'
         }
     
     # ひらがな → カタカナ のディクショナリをつくる
@@ -351,6 +403,7 @@ hiragana2katakana, katakana2hiragana = _make_kana_convertor()
 def _make_romaji_convertor():
     """ローマ字⇔かな変換器を作る"""
     master = {
+        'la':'ァ', 'li':'ィ', 'lu':'ゥ', 'le':'ェ', 'lo':'ォ',
         'a'  :'ア', 'i'  :'イ', 'u'  :'ウ', 'e'  :'エ', 'o'  :'オ',
         'ka' :'カ', 'ki' :'キ', 'ku' :'ク', 'ke' :'ケ', 'ko' :'コ',
         'sa' :'サ', 'shi':'シ', 'su' :'ス', 'se' :'セ', 'so' :'ソ',
@@ -396,32 +449,33 @@ def _make_romaji_convertor():
         'bwa':'ビヮ', 'bwi':'ビィ', 'bwu':'ビゥ', 'bwe':'ビェ', 'bwo':'ビォ',
         'pwa':'プヮ', 'pwi':'プィ', 'pwu':'プゥ', 'pwe':'プェ', 'pwo':'プォ',
         'phi':'プィ', 'phu':'プゥ', 'phe':'プェ', 'pho':'フォ',
-        }
+    }
     
     
     romaji_asist = {
-        'si' :'シ'  , 'ti' :'チ'  , 'hu' :'フ' , 'zi':'ジ',
-        'sya':'シャ', 'syu':'シュ', 'syo':'ショ',
-        'tya':'チャ', 'tyu':'チュ', 'tyo':'チョ',
-        'cya':'チャ', 'cyu':'チュ', 'cyo':'チョ',
-        'jya':'ジャ', 'jyu':'ジュ', 'jyo':'ジョ', 'pha':'ファ', 
-        'qa' :'クァ', 'qi' :'クィ', 'qu' :'クゥ', 'qe' :'クェ', 'qo':'クォ',
+        # 'si' :'シ'  , 'ti' :'チ'  , 'hu' :'フ' , 'zi':'ジ',
+        # 'sya':'シャ', 'syu':'シュ', 'syo':'ショ',
+        # 'tya':'チャ', 'tyu':'チュ', 'tyo':'チョ',
+        # 'cya':'チャ', 'cyu':'チュ', 'cyo':'チョ',
+        # 'jya':'ジャ', 'jyu':'ジュ', 'jyo':'ジョ', 'pha':'ファ', 
+        # 'qa' :'クァ', 'qi' :'クィ', 'qu' :'クゥ', 'qe' :'クェ', 'qo':'クォ',
         
-        'ca' :'カ', 'ci':'シ', 'cu':'ク', 'ce':'セ', 'co':'コ',
-        'la' :'ラ', 'li':'リ', 'lu':'ル', 'le':'レ', 'lo':'ロ',
+        # 'ca' :'カ', 'ci':'シ', 'cu':'ク', 'ce':'セ', 'co':'コ',
+        # 'la' :'ラ', 'li':'ィ', 'lu':'ル', 'le':'レ', 'lo':'ロ',
 
-        'mb' :'ム', 'py':'パイ', 'tho': 'ソ', 'thy':'ティ', 'oh':'オウ',
-        'by':'ビィ', 'cy':'シィ', 'dy':'ディ', 'fy':'フィ', 'gy':'ジィ',
-        'hy':'シー', 'ly':'リィ', 'ny':'ニィ', 'my':'ミィ', 'ry':'リィ',
-        'ty':'ティ', 'vy':'ヴィ', 'zy':'ジィ',
+        # 'mb' :'ム', 'py':'パイ', 'tho': 'ソ', 'thy':'ティ', 'oh':'オウ',
+        # 'by':'ビィ', 'cy':'シィ', 'dy':'ディ', 'fy':'フィ', 'gy':'ジィ',
+        # 'hy':'シー', 'ly':'リィ', 'ny':'ニィ', 'my':'ミィ', 'ry':'リィ',
+        # 'ty':'ティ', 'vy':'ヴィ', 'zy':'ジィ',
         
-        'b':'ブ', 'c':'ク', 'd':'ド', 'f':'フ'  , 'g':'グ', 'h':'フ', 'j':'ジ',
-        'k':'ク', 'l':'ル', 'm':'ム', 'p':'プ'  , 'q':'ク', 'r':'ル', 's':'ス',
-        't':'ト', 'v':'ヴ', 'w':'ゥ', 'x':'クス', 'y':'ィ', 'z':'ズ',
+        # 'li':'ィ',
+        # 'b':'ブ', 'c':'ク', 'd':'ド', 'f':'フ'  , 'g':'グ', 'h':'フ', 'j':'ジ',
+        # 'k':'ク', 'l':'ル', 'm':'ム', 'p':'プ'  , 'q':'ク', 'r':'ル', 's':'ス',
+        # 't':'ト', 'v':'ヴ', 'w':'ゥ', 'x':'クス', 'y':'ィ', 'z':'ズ',
         }
     
 
-    kana_asist = { 'a':'ァ', 'i':'ィ', 'u':'ゥ', 'e':'ェ', 'o':'ォ', }
+    kana_asist = { 'la':'ァ', 'li':'ィ', 'lu':'ゥ', 'le':'ェ', 'lo':'ォ', }
     
     
     def __romaji2kana():
@@ -465,7 +519,7 @@ def _make_romaji_convertor():
         re_kana2roma = re.compile("|".join(map(re.escape, kana_keys)))
         rx_xtu = re.compile("ッ(.)") # 小さい "ッ" は直後の文字を２回に変換
         rx_ltu = re.compile("ッ$"  ) # 最後の小さい "ッ" は消去(?)
-        rx_er  = re.compile("(.)ー") # "ー"は直前の文字を２回に変換
+        # rx_er  = re.compile("(.)ー") # "ー"は直前の文字を２回に変換
         rx_n   = re.compile(r"n(b|p)([aiueo])") # n の後ろが バ行、パ行 なら m に修正
         rx_oo  = re.compile(r"([aiueo])\1")      # oosaka → osaka
         
@@ -474,7 +528,7 @@ def _make_romaji_convertor():
             result = re_kana2roma.sub(lambda x: kana_dict[x.group(0)], result)
             result = rx_xtu.sub(r"\1\1" , result)
             result = rx_ltu.sub(r""     , result)
-            result = rx_er.sub (r"\1\1" , result)
+            # result = rx_er.sub (r"\1\1" , result)
             result = rx_n.sub  (r"m\1\2", result)
             result = rx_oo.sub (r"\1"   , result)
             return result

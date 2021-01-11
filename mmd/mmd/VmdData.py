@@ -163,6 +163,7 @@ class VmdMorphFrame:
         self.bname = ''
         self.fno = fno
         self.ratio = 0
+        self.key = False
     
     def write(self, fout):
         if not self.bname:
@@ -174,6 +175,15 @@ class VmdMorphFrame:
     def set_name(self, name):
         self.name = name
         self.bname = '' if not name else name.encode('cp932').decode('shift_jis').encode('shift_jis')[:15].ljust(15, b'\x00')
+
+    def copy(self):
+        mf = VmdMorphFrame(self.fno)
+        mf.name = self.name
+        mf.bname = self.bname
+        mf.ratio = self.ratio
+        mf.key = self.key
+
+        return mf
     
     def __str__(self):
         return "<VmdMorphFrame name:{0}, fno:{1}, ratio:{2}".format(self.name, self.fno, self.ratio)
@@ -753,6 +763,7 @@ class VmdMotion:
         if morph_name not in self.morphs:
             self.morphs[morph_name] = {}
         
+        mf.key = True
         self.morphs[morph_name][fno] = mf
 
     # 補間曲線を考慮した指定フレーム番号の位置
@@ -1057,7 +1068,7 @@ class VmdMotion:
         # is_read: データ読み込み時のキーを探す
         if fno in self.morphs[morph_name] and (not is_key or (is_key and self.morphs[morph_name][fno].key)) and (not is_read or (is_read and self.morphs[morph_name][fno].read)):
             # 合致するキーが見つかった場合、それを返す
-            logger.debug("** find: fill: (%s)%s", fill_mf.fno, self.morphs[morph_name][fno].ratio)
+            logger.test("** find: fill: (%s)%s", fill_mf.fno, self.morphs[morph_name][fno].ratio)
             return self.morphs[morph_name][fno]
         else:
             # 合致するキーが見つからなかった場合
@@ -1080,7 +1091,7 @@ class VmdMotion:
             fill_mf.fno = fno
             fill_mf.key = False
             fill_mf.read = False
-            logger.debug("** not after: fill: (%s)%s", fill_mf.fno, fill_mf.ratio)
+            logger.test("** not after: fill: (%s)%s", fill_mf.fno, fill_mf.ratio)
             return fill_mf
         
         if len(before_fnos) == 0:
@@ -1089,15 +1100,15 @@ class VmdMotion:
             fill_mf.fno = fno
             fill_mf.key = False
             fill_mf.read = False
-            logger.debug("** not before: fill: (%s)%s", fill_mf.fno, fill_mf.ratio)
+            logger.test("** not before: fill: (%s)%s", fill_mf.fno, fill_mf.ratio)
             return fill_mf
 
         prev_mf = self.morphs[morph_name][before_fnos[-1]]
         next_mf = self.morphs[morph_name][after_fnos[0]]
         if math.isnan(prev_mf.ratio) or math.isinf(prev_mf.ratio):
-            logger.debug("** prev_mf: (%s)%s", prev_mf.fno, prev_mf.ratio)
+            logger.test("** prev_mf: (%s)%s", prev_mf.fno, prev_mf.ratio)
         if math.isnan(next_mf.ratio) or math.isinf(next_mf.ratio):
-            logger.debug("** next_mf: (%s)%s", next_mf.fno, next_mf.ratio)
+            logger.test("** next_mf: (%s)%s", next_mf.fno, next_mf.ratio)
 
         # 名前をコピー
         fill_mf.name = prev_mf.name
@@ -1109,9 +1120,9 @@ class VmdMotion:
         #                                     prev_mf.fno, fill_mf.fno, next_mf.fno)
         # fill_mf.ratio = prev_mf.ratio + ((next_mf.ratio - prev_mf.ratio) * ry)
         fill_mf.ratio = prev_mf.ratio + ((next_mf.ratio - prev_mf.ratio) * ((fill_mf.fno - prev_mf.fno) / (next_mf.fno - prev_mf.fno)))
-        logger.debug("** fill: (%s)%s, head: (%s)%s, tail: (%s)%s", fill_mf.fno, fill_mf.ratio, prev_mf.fno, prev_mf.ratio, next_mf.fno, next_mf.ratio)
+        logger.test("** fill: (%s)%s, head: (%s)%s, tail: (%s)%s", fill_mf.fno, fill_mf.ratio, prev_mf.fno, prev_mf.ratio, next_mf.fno, next_mf.ratio)
         if math.isnan(fill_mf.ratio) or math.isinf(fill_mf.ratio):
-            logger.debug("** fill: (%s)%s, head_mf: %s, %s tail_mf: %s, %s", fill_mf.fno, fill_mf.ratio, prev_mf.fno, prev_mf.ratio, next_mf.fno, next_mf.ratio)
+            logger.test("** fill: (%s)%s, head_mf: %s, %s tail_mf: %s, %s", fill_mf.fno, fill_mf.ratio, prev_mf.fno, prev_mf.ratio, next_mf.fno, next_mf.ratio)
 
         return fill_mf
 
@@ -1186,9 +1197,9 @@ class VmdMotion:
         head_mf = self.calc_mf(morph_name, head, is_key=False, is_read=False)
         # 終了のモーフ
         tail_mf = self.calc_mf(morph_name, tail, is_key=False, is_read=False)
-        logger.debug("head_mf: %s, %s tail_mf: %s, %s", head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
+        logger.test("head_mf: %s, %s tail_mf: %s, %s", head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
         if math.isnan(head_mf.ratio) or math.isinf(head_mf.ratio):
-            logger.debug("head_mf: %s, %s tail_mf: %s, %s", head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
+            logger.test("head_mf: %s, %s tail_mf: %s, %s", head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
 
         for i in range(head + 1, tail, 1):
             # rx, ry, rt = MBezierUtils.evaluate(MBezierUtils.LINEAR_MMD_INTERPOLATION[1].x(), MBezierUtils.LINEAR_MMD_INTERPOLATION[1].y(), \
@@ -1198,26 +1209,26 @@ class VmdMotion:
             ip_ratio = head_mf.ratio + ((tail_mf.ratio - head_mf.ratio) * ((i - head_mf.fno) / (tail_mf.fno - head_mf.fno)))
             # ip_ratio = head_mf.ratio + (tail_mf.ratio - head_mf.ratio) * (i - head) / total
             now_mf = self.calc_mf(morph_name, i, is_key=False, is_read=False)
-            logger.debug("morph_name: %s, i: %s ip_ratio: %s, now: %s, head: (%s)%s, tail: (%s)%s", morph_name, i, ip_ratio, now_mf.ratio, head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
+            logger.test("morph_name: %s, i: %s ip_ratio: %s, now: %s, head: (%s)%s, tail: (%s)%s", morph_name, i, ip_ratio, now_mf.ratio, head_mf.fno, head_mf.ratio, tail_mf.fno, tail_mf.ratio)
             pos_err = abs(ip_ratio - now_mf.ratio)
 
             if pos_err > max_err:
                 max_idx = i
                 max_err = pos_err
 
-        logger.debug("max_err: %s max_idx: %s", max_err, max_idx)
+        logger.debug("max_err: {0} max_idx: {1}", max_err, max_idx)
 
         v1 = []
         if max_err > threshold:
             v1 = self.reduce_morph_frame(morph_name, fnos, head, max_idx, threshold)
             v2 = self.reduce_morph_frame(morph_name, fnos, max_idx, tail, threshold)
-            logger.debug("threshold v1: %s", v1)
-            logger.debug("threshold v2: %s", v2)
+            logger.debug("threshold v1: {0}", v1)
+            logger.debug("threshold v2: {0}", v2)
 
             v1.extend(v2)
         else:
             v1.append(head_mf.fno)
-            logger.debug("not threshold v1: %s", head_mf.fno)
+            logger.debug("not threshold v1: {0}", head_mf.fno)
 
         return v1
 

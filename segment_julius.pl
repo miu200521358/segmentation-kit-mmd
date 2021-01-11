@@ -37,7 +37,7 @@ if (defined $ARGV[0]) {
 }
 
 ## set to 1 to disable inserting silence at begin/end of sentence
-$disable_silence_at_ends=0;
+$disable_silence_at_ends=1;
 
 ## DEBUG: set to 1 to keep generated dfa and dict file
 $leave_dict_flag=0;
