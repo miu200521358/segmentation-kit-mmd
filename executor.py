@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('--audio-dir', type=str, dest='audio_dir', default='', help='Prepared image directory')
     parser.add_argument('--audio-file', type=str, dest='audio_file', default='', help='Audio file path')
     parser.add_argument('--lyrics-file', type=str, dest='lyrics_file', default='', help='Audio file path')
-    parser.add_argument('--threshold', type=int, dest='threshold', default=0.2, help='threshold')
+    parser.add_argument('--threshold', type=float, dest='threshold', default=0.2, help='threshold')
     parser.add_argument('--verbose', type=int, dest='verbose', default=20, help='Log level')
     parser.add_argument("--log-mode", type=int, dest='log_mode', default=0, help='Log output mode')
 
