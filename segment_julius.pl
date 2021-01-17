@@ -49,7 +49,7 @@ $debug_flag=0;
 if ($^O =~ /MSWin/){
     $juliusbin=".\\bin\\julius-4.6.exe";
 } else {
-    $juliusbin="./bin/julius";
+    $juliusbin="/content/julius/julius/julius";
 }
 
 ## acoustic model
