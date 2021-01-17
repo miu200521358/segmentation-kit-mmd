@@ -119,7 +119,7 @@ def execute(args):
         # exoデータ
         process_datetime = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         exo_file_path = os.path.join(args.audio_dir, f"{process_datetime}_lyric.exo")
-        lyric_exo_f = open(exo_file_path, "w")
+        lyric_exo_f = open(exo_file_path, "w", encoding='shift-jis')
         lyric_exo_f.write(exo_header_txt.replace("<<length>>", str(end_fno)))
 
         start_fno = 0
