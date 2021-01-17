@@ -54,13 +54,13 @@ def execute(args):
             # 連続した改行は分割文字列に置換
             lyric = ""
             for v in f.readlines():
-                if re.fullmatch(r'^(\d?\d)\:(\d\d).(\d\d)-(\d?\d)\:(\d\d).(\d\d)$', v.strip()):
-                    m = re.match(r'^(\d?\d)\:(\d\d).(\d\d)-(\d?\d)\:(\d\d).(\d\d)$', v.strip())
+                if re.fullmatch(r'^(\d?\d)\:(\d\d).(\d\d\d)-(\d?\d)\:(\d\d).(\d\d\d)$', v.strip()):
+                    m = re.match(r'^(\d?\d)\:(\d\d).(\d\d\d)-(\d?\d)\:(\d\d).(\d\d\d)$', v.strip())
 
                     # 開始秒数
-                    separate_start_sec = float(m.group(1)) * 60 + float(m.group(2)) + float(m.group(3)) * 0.01
+                    separate_start_sec = float(m.group(1)) * 60 + float(m.group(2)) + float(m.group(3)) * 0.001
                     # 終了秒数
-                    separate_end_sec = float(m.group(4)) * 60 + float(m.group(5)) + float(m.group(6)) * 0.01
+                    separate_end_sec = float(m.group(4)) * 60 + float(m.group(5)) + float(m.group(6)) * 0.001
                     # 追加
                     separates.append((separate_start_sec, separate_end_sec, v.strip()))
                 else:
@@ -255,14 +255,40 @@ def execute(args):
                                 now_ratios.append(str(round(vsmf.ratio, 3)))
 
                             s += 1 / 30
+
+                        if prev_morph_name != now_morph_name:
+                            # 母音の開始(上書き)
+                            # 母音が同じ場合、既にratioが入っているので入れない
+                            mf = motion.calc_mf(now_morph_name, now_start_fno)
+                            mf.ratio = 0
+                            motion.regist_mf(mf, mf.name, mf.fno)
+
+                        # 母音の終了
+                        # 前の母音が残っていたら終了
+                        for m in ["あ", "い", "う", "え", "お"]:
+                            mf = motion.calc_mf(m, now_end_fno)
+                            if mf.ratio != 0:
+                                mf.ratio = 0
+                                motion.regist_mf(mf, mf.name, mf.fno)
+
                     elif args.threshold == 1:
                         # 1の場合、最高値を登録する
+
+                        # 区間内に同じモーフで違うキーがある場合、削除                        
+                        s =  now_start_s
+                        while s < end_s:
+                            f = round(s * 30) + start_fno
+                            mf = motion.calc_mf(now_morph_name, f)
+                            if mf.key:
+                                del motion.morphs[now_morph_name][f]
+                            s += 1 / 30
+
                         rs = round(now_start_s * rate)
                         rf = round(end_s * rate)
 
                         vs = sep_data[rs:rf]
-                        fs = round(min(end_s - 1, (now_start_s + 2)) * 30) + start_fno
-                        fe = round(max(start_s + 1, (end_s - 2)) * 30) + start_fno
+                        fs = min(now_start_fno + 2, now_end_fno - 2)
+                        fe = max(now_end_fno - 2, now_start_fno + 2)
 
                         if len(vs) > 0:
                             # 台形になるように、開始と終了に同じ値
@@ -270,29 +296,23 @@ def execute(args):
                             vsmf.set_name(now_morph_name)
                             vsmf.ratio = min(1, float(np.max(vs)))
                             motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
-                            now_ratios.append(str(round(vsmf.ratio, 3)))
+                            now_ratios.append(f'{fs}:{round(vsmf.ratio, 3)}')
 
                             vemf = VmdMorphFrame(max(0, fe))
                             vemf.set_name(now_morph_name)
                             vemf.ratio = min(1, float(np.max(vs)))
                             motion.regist_mf(vemf, vemf.name, vemf.fno)
-                            now_ratios.append(str(round(vemf.ratio, 3)))
-
-                    if prev_morph_name != now_morph_name:
-                        # 母音の開始(上書き)
-                        # 母音が同じ場合、連続させるので入らない
+                            now_ratios.append(f'{fe}:{round(vemf.ratio, 3)}')
+                        
                         vsmf = VmdMorphFrame(now_start_fno)
                         vsmf.set_name(now_morph_name)
                         vsmf.ratio = 0
                         motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
 
-                    # 母音の終了
-                    # 前の母音が残っていたら終了
-                    for m in ["あ", "い", "う", "え", "お"]:
-                        mf = motion.calc_mf(m, now_end_fno)
-                        if mf.ratio != 0:
-                            mf.ratio = 0
-                            motion.regist_mf(mf, mf.name, mf.fno)
+                        vsmf = VmdMorphFrame(now_end_fno)
+                        vsmf.set_name(now_morph_name)
+                        vsmf.ratio = 0
+                        motion.regist_mf(vsmf, vsmf.name, vsmf.fno)
 
                 if syllable in VOWELS or syllable in ENDS:
                     # exoデータを出力

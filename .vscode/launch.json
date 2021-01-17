@@ -23,9 +23,15 @@
                 // "--audio-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\cat\\cat_full_wav_20210110_222327",
                 // "--audio-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\cat\\cat_2.mp3",
                 // "--lyrics-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\cat\\cat_2.txt",
+
                 // "--audio-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\bbf2\\bbf.wav",
-                "--lyrics-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\bbf2\\bbf_full.txt",
-                "--audio-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\bbf2\\bbf_wav_20210111_141547",
+                // "--lyrics-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\bbf2\\bbf_full.txt",
+                // "--audio-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\bbf2\\bbf_wav_20210111_141547",
+
+                // "--audio-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\scissorhands\\ask.wav",
+                "--lyrics-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\scissorhands\\scissor_last.txt",
+                "--audio-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\lip\\scissorhands\\ask_wav_20210114_211409",
+
                 // "--process", "vocals,lip",
                 // "--process", "vocals",
                 "--process", "lip",
@@ -33,7 +39,7 @@
                 // 5: test, 10: debug, 20: info, 30: warning
                 "--verbose", "20",
                 // 0: readonly, 1: update
-                "--log-mode", "1",
+                "--log-mode", "0",
             ]
         },
     ]
