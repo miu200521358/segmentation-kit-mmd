@@ -38,12 +38,12 @@ def execute(args):
 
         # exoヘッダテンプレートを読み込み
         exo_header_txt = None
-        with open(os.path.join("config", "exo.head.txt"), "r") as f:
+        with open(os.path.join("config", "exo.head.txt"), "r", encoding='shift-jis') as f:
             exo_header_txt = f.read()
 
         # exo文字テンプレートを読み込み
         exo_chara_txt = None
-        with open(os.path.join("config", "exo.chara.txt"), "r") as f:
+        with open(os.path.join("config", "exo.chara.txt"), "r", encoding='shift-jis') as f:
             exo_chara_txt = f.read()
 
         # 歌詞ファイルをコピー
