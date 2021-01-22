@@ -77,7 +77,7 @@ def execute(args):
             full_lyrics_txts.append(lyric)
 
         if len(separates) != len(full_lyrics_txts):
-            logger.error("歌詞と秒数区切りのペアが正しく設定されていません。\n{0}", args.lyrics_file, decoration=MLogger.DECORATION_BOX)
+            logger.error("歌詞と秒数区切りのペアが正しく設定されていません。\nひとつ上に具体的なエラー箇所が記されてますので、確認してください。\n{0}", args.lyrics_file, decoration=MLogger.DECORATION_BOX)
             return False
         
         prev_separate_start_sec = 0
@@ -98,7 +98,7 @@ def execute(args):
         full_lyric = katakana2hiragana(full_lyric)
 
         # ひらがな以外はNG
-        not_hira_list = re.findall(r'[^ぁ-んー\-{10}( sp )]', full_lyric)
+        not_hira_list = re.findall(r'[^っぁ-んー\-{10}( sp )]', full_lyric)
         if len(not_hira_list) > 0:
             # ひらがな以外はエラー
             logger.error("指定された歌詞ファイルに全角カナ・ひらがな以外が含まれています。\n{0}\nエラー文字：{1}", args.lyrics_file, ",".join(not_hira_list), decoration=MLogger.DECORATION_BOX)
@@ -452,23 +452,23 @@ def _make_romaji_convertor():
         'pya':'ピャ', 'pyi':'ピィ', 'pyu':'ピュ', 'pye':'ピェ', 'pyo':'ピョ',
         'mya':'ミャ', 'myi':'ミィ', 'myu':'ミュ', 'mye':'ミェ', 'myo':'ミョ',
         'rya':'リャ', 'ryi':'リィ', 'ryu':'リュ', 'rye':'リェ', 'ryo':'リョ',
-        'fa' :'ファ', 'fi' :'フィ',               'fe' :'フェ', 'fo' :'フォ',
-        'wi' :'ウィ', 'we' :'ウェ', 
-        'va' :'ヴァ', 'vi' :'ヴィ', 've' :'ヴェ', 'vo' :'ヴォ',
+        # 'fa' :'ファ', 'fi' :'フィ',               'fe' :'フェ', 'fo' :'フォ',
+        # 'wi' :'ウィ', 'we' :'ウェ', 
+        # 'va' :'ヴァ', 'vi' :'ヴィ', 've' :'ヴェ', 'vo' :'ヴォ',
         
-        'kwa':'クァ', 'kwi':'クィ', 'kwu':'クゥ', 'kwe':'クェ', 'kwo':'クォ',
-        'kha':'クァ', 'khi':'クィ', 'khu':'クゥ', 'khe':'クェ', 'kho':'クォ',
-        'gwa':'グァ', 'gwi':'グィ', 'gwu':'グゥ', 'gwe':'グェ', 'gwo':'グォ',
-        'gha':'グァ', 'ghi':'グィ', 'ghu':'グゥ', 'ghe':'グェ', 'gho':'グォ',
-        'swa':'スァ', 'swi':'スィ', 'swu':'スゥ', 'swe':'スェ', 'swo':'スォ',
-        'swa':'スァ', 'swi':'スィ', 'swu':'スゥ', 'swe':'スェ', 'swo':'スォ',
-        'zwa':'ズヮ', 'zwi':'ズィ', 'zwu':'ズゥ', 'zwe':'ズェ', 'zwo':'ズォ',
-        'twa':'トァ', 'twi':'トィ', 'twu':'トゥ', 'twe':'トェ', 'two':'トォ',
-        'dwa':'ドァ', 'dwi':'ドィ', 'dwu':'ドゥ', 'dwe':'ドェ', 'dwo':'ドォ',
-        'mwa':'ムヮ', 'mwi':'ムィ', 'mwu':'ムゥ', 'mwe':'ムェ', 'mwo':'ムォ',
-        'bwa':'ビヮ', 'bwi':'ビィ', 'bwu':'ビゥ', 'bwe':'ビェ', 'bwo':'ビォ',
-        'pwa':'プヮ', 'pwi':'プィ', 'pwu':'プゥ', 'pwe':'プェ', 'pwo':'プォ',
-        'phi':'プィ', 'phu':'プゥ', 'phe':'プェ', 'pho':'フォ',
+        # 'kwa':'クァ', 'kwi':'クィ', 'kwu':'クゥ', 'kwe':'クェ', 'kwo':'クォ',
+        # 'kha':'クァ', 'khi':'クィ', 'khu':'クゥ', 'khe':'クェ', 'kho':'クォ',
+        # 'gwa':'グァ', 'gwi':'グィ', 'gwu':'グゥ', 'gwe':'グェ', 'gwo':'グォ',
+        # 'gha':'グァ', 'ghi':'グィ', 'ghu':'グゥ', 'ghe':'グェ', 'gho':'グォ',
+        # 'swa':'スァ', 'swi':'スィ', 'swu':'スゥ', 'swe':'スェ', 'swo':'スォ',
+        # 'swa':'スァ', 'swi':'スィ', 'swu':'スゥ', 'swe':'スェ', 'swo':'スォ',
+        # 'zwa':'ズヮ', 'zwi':'ズィ', 'zwu':'ズゥ', 'zwe':'ズェ', 'zwo':'ズォ',
+        # 'twa':'トァ', 'twi':'トィ', 'twu':'トゥ', 'twe':'トェ', 'two':'トォ',
+        # 'dwa':'ドァ', 'dwi':'ドィ', 'dwu':'ドゥ', 'dwe':'ドェ', 'dwo':'ドォ',
+        # 'mwa':'ムヮ', 'mwi':'ムィ', 'mwu':'ムゥ', 'mwe':'ムェ', 'mwo':'ムォ',
+        # 'bwa':'ビヮ', 'bwi':'ビィ', 'bwu':'ビゥ', 'bwe':'ビェ', 'bwo':'ビォ',
+        # 'pwa':'プヮ', 'pwi':'プィ', 'pwu':'プゥ', 'pwe':'プェ', 'pwo':'プォ',
+        # 'phi':'プィ', 'phu':'プゥ', 'phe':'プェ', 'pho':'フォ',
     }
     
     
@@ -538,19 +538,19 @@ def _make_romaji_convertor():
         
         re_kana2roma = re.compile("|".join(map(re.escape, kana_keys)))
         rx_xtu = re.compile("ッ(.)") # 小さい "ッ" は直後の文字を２回に変換
-        rx_ltu = re.compile("ッ$"  ) # 最後の小さい "ッ" は消去(?)
+        # rx_ltu = re.compile("ッ$"  ) # 最後の小さい "ッ" は消去(?)
         # rx_er  = re.compile("(.)ー") # "ー"は直前の文字を２回に変換
-        rx_n   = re.compile(r"n(b|p)([aiueo])") # n の後ろが バ行、パ行 なら m に修正
-        rx_oo  = re.compile(r"([aiueo])\1")      # oosaka → osaka
+        # rx_n   = re.compile(r"n(b|p)([aiueo])") # n の後ろが バ行、パ行 なら m に修正
+        # rx_oo  = re.compile(r"([aiueo])\1")      # oosaka → osaka
         
         def _kana2romaji(text):
             result = hiragana2katakana(text)
             result = re_kana2roma.sub(lambda x: kana_dict[x.group(0)], result)
             result = rx_xtu.sub(r"\1\1" , result)
-            result = rx_ltu.sub(r""     , result)
+            # result = rx_ltu.sub(r""     , result)
             # result = rx_er.sub (r"\1\1" , result)
-            result = rx_n.sub  (r"m\1\2", result)
-            result = rx_oo.sub (r"\1"   , result)
+            # result = rx_n.sub  (r"m\1\2", result)
+            # result = rx_oo.sub (r"\1"   , result)
             return result
         return _kana2romaji
     
