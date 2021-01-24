@@ -1,0 +1,14 @@
+conda create -n segment pip python=3.7
+
+conda activate segment
+
+conda install -c anaconda ffmpeg 
+conda install -c anaconda perl
+
+pip install spleeter==1.5.4 tensorflow-gpu==1.15 gast==0.2.2
+
+pip install numpy-quaternion bezier
+
+
+# いらないかも
+pip install scipy

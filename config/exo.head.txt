@@ -1,0 +1,8 @@
+[exedit]
+width=1920
+height=1080
+rate=30
+scale=1
+length=<<length>>
+audio_rate=12800
+audio_ch=2

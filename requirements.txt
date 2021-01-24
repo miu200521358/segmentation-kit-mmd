@@ -1,0 +1,7 @@
+spleeter==1.5.4
+tensorflow-gpu==1.15
+gast==0.2.2
+numpy-quaternion
+bezier
+ffmpeg
+perl
