@@ -2,10 +2,12 @@ spleeter==1.5.4
 tensorflow-gpu==1.15
 gast==0.2.2
 ffmpeg
+ffmpeg-python
 perl
 # quaternion
 numpy-quaternion==2020.11.2.17.0.49
 # for bezier
 bezier==2020.5.19
-numba==0.52.0
+numba==0.48.0
 scipy
+numpy>=1.19.1
