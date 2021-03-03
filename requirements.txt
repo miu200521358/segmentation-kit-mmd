@@ -6,8 +6,11 @@ numba==0.48.0
 scipy
 # segment
 spleeter==1.5.4
-tensorflow-gpu==1.15
 gast==0.2.2
 ffmpeg
 ffmpeg-python
 perl
+numpy==1.19.5
+tensorflow-gpu==1.15
+tensorboard==1.15.0
+tensorflow-estimator==1.15.1
